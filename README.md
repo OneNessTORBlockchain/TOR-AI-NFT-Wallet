@@ -1,3 +1,7 @@
+
+<img width="1983" height="793" alt="TOR AI NFT Wallet_ Neon Blockchain Future" src="https://github.com/user-attachments/assets/c81b10d5-4a2e-44c3-8a52-2627b93d32fe" />
+
+
 # TOR AI-NFT Wallet
 
 A self-custody wallet for the **OneNess TOR** chain that refuses to sign unless it has proved which chain it is talking to.
