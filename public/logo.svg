@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 140" role="img" aria-labelledby="title desc">
+<title id="title">TOR Wallet</title><desc id="desc">Purple wallet icon with onion emblem and TOR Wallet wordmark.</desc>
+<defs><linearGradient id="p" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c49aff"/><stop offset="1" stop-color="#7028d8"/></linearGradient></defs>
+<g transform="translate(14 15)">
+<rect x="5" y="18" width="104" height="88" rx="17" fill="#171024" stroke="url(#p)" stroke-width="6"/>
+<path d="M17 31h76a13 13 0 0 1 13 13v12H75a15 15 0 0 0 0 30h31v7a13 13 0 0 1-13 13H18A13 13 0 0 1 5 93V31" fill="#24143b" stroke="#a875f4" stroke-width="3"/>
+<path d="M75 56h35v30H75a15 15 0 0 1 0-30Z" fill="url(#p)"/><circle cx="82" cy="71" r="4" fill="#fff"/>
+<path d="M57 36c-5 8-17 14-17 27 0 12 9 20 17 24 8-4 17-12 17-24 0-13-12-19-17-27Z" fill="#171024" stroke="#d7baff" stroke-width="2.8"/>
+<path d="M57 44c-7 10-9 17-7 25 1 5 4 9 7 12 3-3 6-7 7-12 2-8 0-15-7-25Z" fill="none" stroke="#a875f4" stroke-width="2.5"/>
+</g>
+<g font-family="Arial,Helvetica,sans-serif" font-weight="800"><text x="145" y="70" font-size="43" letter-spacing="2" fill="#fff">TOR</text><text x="147" y="103" font-size="23" letter-spacing="5" fill="#a875f4">WALLET</text></g>
+</svg>
