@@ -20,7 +20,7 @@ import { MarketHome, TokenDetail } from "./tor/market";
 import { CreateNft } from "./tor/mint";
 import { VerifyTx } from "./tor/verify";
 import { HistoryPage } from "./tor/history";
-import { ChartStudio, ChainEventChart, TokenPriceChart, TorRateStrip } from "./tor/charts";
+import { ChartStudio, ChainEventChart, TokenPriceChart, TorRateStrip, torUsd, useTorQuote } from "./tor/charts";
 
 const NAV = [
   { href: "#/overview", label: "Wallet" },
@@ -117,8 +117,8 @@ function Charts({ symbol }: { symbol?: string }) {
         </div>
         <p className="muted tiny" style={{ margin: 0 }}>
           The generator below builds a chart on demand: choose the token, the metric and the window.
-          The two panels under it need no choices — TOR's price exactly as the node prices it, and
-          the chain's swap rhythm counted from real event timestamps.
+          The two panels under it need no choices — TOR's one USD quote (the same number every
+          panel prints), and the chain's swap rhythm counted from real event timestamps.
         </p>
         <TorRateStrip />
       </div>
@@ -151,12 +151,16 @@ function Overview() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
-  /* One poll of the node's own market engine: it already carries TOR's price and
-     every listed token, so holdings are valued from the same source that trades them. */
+  /* One poll of the node's own market engine for the token list, and one poll of
+     the node's TOR/USD quote for every dollar figure. The quote is the same
+     `GET /api/market/tor` the charts read, so the balance hint and the chart strip
+     can never print two different prices. */
   const market = useAsync(
     () => api.get<{ tokens: Token[]; tor: { price_usd: number } }>("/api/market/tokens"),
     [],
   );
+  const { quote: torQuote } = useTorQuote();
+  const torPrice = torUsd(torQuote);
   const history = useAsync(
     () =>
       session
@@ -179,7 +183,7 @@ function Overview() {
           </p>
           <div className="grid cols-3">
             <Stat label="Network" value={BRAND.chain} hint={`chain id ${BRAND.chainId}`} />
-            <Stat label="TOR price" value={money(market.data?.tor?.price_usd)} hint="live from the node" />
+            <Stat label="TOR price" value={money(torPrice)} hint="TOR/USD · one quote, every 30 s" />
             <Stat
               label="Listed tokens"
               value={String(market.data?.tokens?.length ?? 0)}
@@ -192,7 +196,6 @@ function Overview() {
     );
   }
 
-  const torPrice = market.data?.tor?.price_usd ?? 0;
   const balance = Number(profile?.wallet?.balance_tor ?? 0);
   const holdings = Object.entries(profile?.wallet?.tokens || {});
   const priced = holdings.map(([symbol, qty]) => ({
@@ -214,7 +217,7 @@ function Overview() {
         <Stat
           label="TOR balance"
           value={tor(balance)}
-          hint={`${money(balance * torPrice)} at the node price`}
+          hint={`${money(balance * torPrice)} at ${money(torPrice)} / TOR`}
         />
         <Stat
           label="Token holdings"

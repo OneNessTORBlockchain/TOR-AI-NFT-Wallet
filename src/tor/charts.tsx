@@ -500,16 +500,54 @@ export type TorQuote = {
 
 let quoteCache: { at: number; promise: Promise<TorQuote> } | null = null;
 
-/** 700 bytes; shared by every chart on a screen for 15 s, so one screen makes one read. */
+/**
+ * The node's 30 s tick is the only clock this quote has, so a screen never reads
+ * the same tick twice and never shows a price the node has already replaced.
+ */
+export const TOR_QUOTE_MS = 30_000;
+
+/** Shared by every chart on a screen for one tick, so one screen makes one read. */
 export function torQuote(force = false): Promise<TorQuote> {
   const now = Date.now();
-  if (!force && quoteCache && now - quoteCache.at < 15_000) return quoteCache.promise;
+  if (!force && quoteCache && now - quoteCache.at < TOR_QUOTE_MS) return quoteCache.promise;
   const promise = api.get<TorQuote>("/api/market/tor", 15_000);
   quoteCache = { at: now, promise };
   promise.catch(() => {
     if (quoteCache && quoteCache.promise === promise) quoteCache = null;
   });
   return promise;
+}
+
+/**
+ * The one TOR/USD number a screen shows: `GET /api/market/tor`, re-read every
+ * 30 s on the node's own tick. The price strip, the charts and the balance's USD
+ * hint all scale by this value, so two panels can never quote two prices.
+ */
+export function useTorQuote(intervalMs = TOR_QUOTE_MS): { quote: TorQuote | null; error: string } {
+  const [quote, setQuote] = useState<TorQuote | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    const read = () =>
+      torQuote()
+        .then((value) => {
+          if (!alive) return;
+          setQuote(value);
+          setError("");
+        })
+        .catch((problem: Error) => {
+          if (alive) setError(problem.message || "the node did not answer");
+        });
+    void read();
+    const timer = window.setInterval(read, Math.max(5_000, intervalMs));
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, [intervalMs]);
+
+  return { quote, error };
 }
 
 /** TOR/USD exactly as the node prices it this tick, or 0 when the quote is unreadable. */
@@ -528,32 +566,12 @@ export function toUsd(amountTor: number, quote: TorQuote | null | undefined): nu
 }
 
 /**
- * The rate strip: TOR/USD as the node publishes it, re-read every 20 s like the marketplace board.
- * Every dollar figure on the charts page is scaled by the number shown here.
+ * The rate strip: TOR/USD as the node publishes it, re-read on the node's own
+ * 30 s tick. Every dollar figure on the wallet — the charts, the holdings, the
+ * balance hint — is scaled by this one number.
  */
 export function TorRateStrip() {
-  const [quote, setQuote] = useState<TorQuote | null>(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let alive = true;
-    const read = () =>
-      torQuote(true)
-        .then((value) => {
-          if (!alive) return;
-          setQuote(value);
-          setError("");
-        })
-        .catch((problem: Error) => {
-          if (alive) setError(problem.message || "the node did not answer");
-        });
-    void read();
-    const timer = window.setInterval(read, 20_000);
-    return () => {
-      alive = false;
-      window.clearInterval(timer);
-    };
-  }, []);
+  const { quote, error } = useTorQuote();
 
   const rate = torUsd(quote);
   return (
@@ -572,7 +590,7 @@ export function TorRateStrip() {
       </div>
       <span className="muted tiny">
         {quote
-          ? `GET /api/market/tor · ${quote.symbol} priced in USD by the node, refreshed every 20 s — every $ below is this rate`
+          ? `GET /api/market/tor · one TOR/USD quote, refreshed every 30 s — every $ below is this rate`
           : "waiting for the node's own price"}
       </span>
     </div>
